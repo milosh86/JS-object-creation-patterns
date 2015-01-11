@@ -8,11 +8,11 @@
  *      In other words:
  *          var obj1 = {};
  *          var obj2 = {};
- *          customEventuality(obj1);
+ *          customEventuality(obj1);                        
  *          customEventuality(obj2);
  *          obj1.on === obj2.on // returns true  
  *  2. off method added. It returns true/false.
- *  3. on returns 'off' method instead of 'this'
+ *  3. on returns 'off' method instead of 'this' (no method chaining)
 */
 
 
@@ -78,15 +78,20 @@ var eventuality = function (that) {
 // ******************************************
 // Based on the above 'eventuality' function 
 // from "Javascript The Good Parts" - Douglas Crockford
+// !!! registry is shared by all objects - not good !!!!
 // ******************************************
 
 var customEventuality = (function () {
     var registry = {};
     
     var on = function (type, method, parameters) {
+        if (!(type && method)) {
+            throw "Wrong parameters passed to 'on' method!";
+        }
         // Register an event. Make a handler record. Put it
         // in a handler array, making one if it doesn't yet
         // exist for this type.
+
         var handler = {
             method: method,
             parameters: parameters
@@ -161,8 +166,11 @@ var customEventuality = (function () {
                 // Invoke a handler. If the record contained
                 // parameters, then pass them. Otherwise, pass the
                 // event object.
-                func.apply(this,
-                    handler.parameters || [event]);
+                if (typeof func === "function") {
+                    func.apply(this,
+                        handler.parameters || [event]);
+                }
+                
             }
         }
         return this;

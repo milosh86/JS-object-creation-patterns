@@ -1,0 +1,8 @@
+Object creation / inheritance
+
+Requirements and constraints:
+	1. Delegate object / Prototype: common methods should be stored in prototype object - better memory efficency. Prototype methods have access to object's own public properties and methods, but have no access to private data. However, proto methods could access shared private data in the proto object. Also, protoypes could provide default values for properties that are based on primitive types (numbers, strings, bools). If we change in any way primitive default value, new instance level property is created without modifing value on the proto object. Don't put properties based on reference types (objects, arrays) in prototypes (it acts as a shared data)!
+	
+	2. Encapsulation / Data privacy: It should be possible to define private properties/methods that could be accessed only by priviledged methods. Priviledged methods must be on the same 'level' as private data, i.e. proto methods cannot access private data on 'child' object, and vice versa. It means that priviledged methods cannot be shared by all object instances. (privacy/encaptulation - memory efficency trade off). Alternative is to use special naming convenction for properties that should be private, such as 'begins with _'.
+
+	3. Composing 'features'/prototypes (aka multiple inheritance): It should be possible to 'enrich' objects with multiple 'features'. It could be used for composing prototypes or for composing individual objects.

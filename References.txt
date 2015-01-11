@@ -1,0 +1,11 @@
+* "Eric Elliott - Programming JavaScript Applications", chapter 3 Objects (Flyweight pattern) http://chimera.labs.oreilly.com/books/1234000000262/ch03.html
+
+* "Kyle Simpson - JS Objects: Inherited a Mess" (3 part blog post) - http://davidwalsh.name/javascript-objects
+
+* "Stoyan Stefanov - Object Oriented JS", chapter 6 Inheritance
+
+* "Stoyan Stefanov - JS Design Patterns", Object Creation Patterns, Code Reuse Patterns chapters
+
+* "Douglas Crockford - JS The Good Parts", Inheritance chapter
+
+* Eric Elliott - Stampit library
