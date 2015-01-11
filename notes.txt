@@ -5,4 +5,16 @@ Requirements and constraints:
 	
 	2. Encapsulation / Data privacy: It should be possible to define private properties/methods that could be accessed only by priviledged methods. Priviledged methods must be on the same 'level' as private data, i.e. proto methods cannot access private data on 'child' object, and vice versa. It means that priviledged methods cannot be shared by all object instances. (privacy/encaptulation - memory efficency trade off). Alternative is to use special naming convenction for properties that should be private, such as 'begins with _'.
 
-	3. Composing 'features'/prototypes (aka multiple inheritance): It should be possible to 'enrich' objects with multiple 'features'. It could be used for composing prototypes or for composing individual objects.
+	3. Composing 'features'/prototypes (aka multiple inheritance): It should be possible to 'enrich' objects with multiple 'features'. It could be used for composing prototypes or for composing individual objects. Multiple inheritance could be done something like:
+
+		var proto1 = {
+			a: 1,
+			b: 1
+		};
+
+		var proto2 = Object.create(proto1);
+
+		proto2.c = 1;
+		proto2.d = 1;
+
+	This approach is appropriate when proto1 and proto2 are dependable (proto2 is delegating some operations to proto1), i.e. controller is proto1 and loginController and validationController are proto2. loginController and validationController are delegating some common operations to controller prototype (proto 1). Composing is more appropriate when we have a set of independent features which we want to use as a building blocks for other prototypes or base objects.
