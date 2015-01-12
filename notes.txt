@@ -18,3 +18,10 @@ Requirements and constraints:
 		proto2.d = 1;
 
 	This approach is appropriate when proto1 and proto2 are dependable (proto2 is delegating some operations to proto1), i.e. controller is proto1 and loginController and validationController are proto2. loginController and validationController are delegating some common operations to controller prototype (proto 1). Composing is more appropriate when we have a set of independent features which we want to use as a building blocks for other prototypes or base objects.
+
+	Composition techniques: mixins (explicit, implicit), parasitic inheritance, 
+
+	$.extend copy all properties in the chain
+
+	_.extend copy only properties from 'base' object (in _ ver 1.7 and below. In future releases it will copy all properties[check])
+
