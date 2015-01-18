@@ -9,3 +9,5 @@
 * "Douglas Crockford - JS The Good Parts", Inheritance chapter
 
 * Eric Elliott - Stampit library
+
+* Hiding Implementation Details with ECMAScript 6 WeakMaps - http://fitzgeraldnick.com/weblog/53/

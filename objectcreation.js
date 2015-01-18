@@ -1,9 +1,133 @@
 /*
-Review of different object creation patterns.  
+  FOR LEARNING PURPOSES ONLY.
+  WORK IN PROGRESS. 
 */
+// ---------------------------------------------------
+// Simple object creation (no prototypes, no privacy):
+// ---------------------------------------------------
 
-// classic module pattern Addy Osmani
-var myNamespace = (function () {
+// 1. Object literal
+var obj = {name: 'object literal', method: function () {return 'Method: ' + this.name}};
+
+// 2. Constructor
+function Constructor() {
+  if (!(this instanceof Constructor))
+    return new Constructor;
+
+  this.name = 'constructor function';
+  this.method = function () {
+    return 'Method: ' + this.name;
+  };
+}
+
+var obj = new Constructor();
+
+// 3. Object.create
+var obj = Object.create(null);
+obj.name = 'Object.create';
+obj.method = function () {
+  return 'Method: ' + this.name;
+};
+
+// 4. Factory function
+function createObj() {
+  return {
+    name: 'factory function',
+    method: function () {
+      return 'Method: ' + this.name;
+    }
+  };
+}
+
+// ------------------------------------------------------
+// Sharing common properties/behavior through prototypes:
+// (delegation)
+// ------------------------------------------------------
+
+// 1. Constructor function
+function Constructor() {
+  if (!(this instanceof Constructor)) // or use 'use strict' to prevent nasty bugs with 'this' when Constructor is invoked without 'new'
+    return new Constructor;
+
+  this.name = 'constructor function';
+  
+}
+
+Constructor.prototype.method = function(){
+  return 'Method: ' + this.name;
+};
+
+var obj1 = new Constructor();
+var obj2 = new Constructor();
+obj1.method === obj2.method // true
+obj1.name === obj2.name // false
+
+// 2. Object.create
+var commonProps = {
+  name: 'shared name', 
+  method: function () {return 'shared method: ' + this.name}
+};
+var obj1 = Object.create(commonProps);
+var obj2 = Object.create(commonProps);
+obj2.name = 'local name'; // overwrite name property
+
+obj1.method === obj2.method // true
+obj1.name === obj2.name // false
+
+// 3.1 Factory function + closure
+var factory = (function(){
+  // all common properties are shared through closure
+  var name = 'shared name';
+  var method = function () {return 'shared method: ' + this.name};
+
+  return function factory() {
+    return {
+      name: name,
+      method: method,
+      local: {name:'local name'}
+
+    }
+  };
+})();
+
+var obj1 = factory();
+var obj2 = factory();
+
+obj1.method === obj2.method; // true
+obj1.name === obj2.name; // true
+obj1.local === obj2.local; // false
+
+// 3.2 Factory function + closure + Object.create
+var factory = (function(){
+  // all common properties are shared through closure
+  var proto = {
+    name: 'shared name',
+    method: function () {return 'shared method: ' + this.name}
+  };
+
+  return function factory() {
+    var obj = Object.create(proto);
+    obj.local = {name:'local name'};
+    return obj;
+  };
+})();
+
+var obj1 = factory();
+var obj2 = factory();
+
+obj1.method === obj2.method; // true
+obj1.name === obj2.name; // true
+obj1.local === obj2.local; // false
+// --------------------------------------------
+// Creation of objects with private properties:
+// See http://fitzgeraldnick.com/weblog/53/ for 
+// more info on this topic.
+// --------------------------------------------
+
+// 1. Closing Over Private Data in the Constructor or Factory function
+
+// 1.1 Factory function
+var factory = function () {
  
   var myPrivateVar, myPrivateMethod;
  
@@ -11,8 +135,8 @@ var myNamespace = (function () {
   myPrivateVar = 0;
  
   // A private function which logs any arguments
-  myPrivateMethod = function( foo ) {
-      console.log( foo );
+  myPrivateMethod = function(foo) {
+      console.log(foo);
   };
  
   return {
@@ -21,53 +145,71 @@ var myNamespace = (function () {
     myPublicVar: "foo",
  
     // A public function utilizing privates
-    myPublicFunction: function( bar ) {
+    myPublicFunction: function(bar) {
  
       // Increment our private counter
       myPrivateVar++;
  
       // Call our private method using bar
-      myPrivateMethod( bar );
+      myPrivateMethod(bar);
  
     }
   };
  
-})();
+};
 
-// Addy Osmani patterns - Christian Heilmann’s Revealing Module pattern
-var myRevealingModule = (function () {
+// 1.2 Constructor function
+var Constructor = function () {
+  if (!(this instanceof Constructor)) // or use 'use strict' to prevent nasty bugs with 'this' when Constructor is invoked without 'new'
+    return new Constructor;
+
+  var myPrivateVar, myPrivateMethod;
  
-        var privateVar = "Ben Cherry",
-            publicVar  = "Hey there!";
+  // A private counter variable
+  myPrivateVar = 0;
  
-        function privateFunction() {
-            console.log( "Name:" + privateVar );
-        }
+  // A private function which logs any arguments
+  myPrivateMethod = function(foo) {
+      console.log(foo);
+  };
  
-        function publicSetName( strName ) {
-            privateVar = strName;
-        }
+  // A public variable
+  this.myPublicVar = "foo";
  
-        function publicGetName() {
-            privateFunction();
-        }
+  // A public function utilizing privates
+  this.myPublicFunction = function(bar) {
  
+    // Increment our private counter
+    myPrivateVar++;
  
-        // Reveal public pointers to
-        // private functions and properties
+    // Call our private method using bar
+    myPrivateMethod(bar);
  
-        return {
-            setName: publicSetName,
-            greeting: publicVar,
-            getName: publicGetName
-        };
+  };
+  
  
-    })();
- 
-myRevealingModule.setName( "Paul Kinlan" );
+};
+
+// 2. Prefixing Private Members with an Underscore (just a convention, does not force any restrictions)
+function Constructor() {
+  if (!(this instanceof Constructor)) // or use 'use strict' to prevent nasty bugs with 'this' when Constructor is invoked without 'new'
+    return new Constructor;
+
+  this.name = 'constructor function';
+  this._private = 'private data. Do not access it directly!';
+  
+}
+
+Constructor.prototype.method = function(){
+  return 'Only method should access private data. Data: ' + this._private;
+};
+
+// ===========================================
+// ===========================================
 
 
-/* factory function with 'static' functions and properies*/
+
+/* factory function with 'static' functions and properties*/
 var contact = (function () {
     function protoF() {
         return 'hello, each object share the same function staticf';
@@ -133,7 +275,7 @@ function featureSet1(obj) {
     obj.FS1feature1 = 'fs1_feature1';
     obj.FS1feature2 = 'fs1_feature2';
 }
-
+// feature might not need init, but instead a method that is supposed to use 'base' properties should init it for itself. See Backbone's Event.
 featureSet1.init = function () {
   var priv = 'local private';
 
@@ -218,6 +360,21 @@ var init = extend(proto1, 'feature2', 'feature1');
 
 var o1 = Object.create(proto1);
 init.call(o1);
+
+// creates new object with given features. If proto is null
+function create(proto, [features]) {
+  // check if proto is null or object
+  var obj = Object.create(proto),
+      init;
+
+  if (proto)
+    init = extend(proto, [features]);
+  else
+    init = extend(obj, [features]);
+  
+  init.call(obj);
+  return obj;
+}
 
 
 

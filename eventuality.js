@@ -1,18 +1,7 @@
 /*
  * THIS IS CREATED ONLY FOR LEARNING PURPOSES.
  *
- * Customized eventuality 'part' function, which adds eventing capabilities to any object.
- * Comparing to original function, customEventuality adds/changes following:
- *   1. on, fire and other method's definitions are not added directly to the passed object. 
- *      Instead, those methods are created and 'stored' in the closure and the passed object ('that') is only enriched with references to methods in closure.
- *      In other words:
- *          var obj1 = {};
- *          var obj2 = {};
- *          customEventuality(obj1);                        
- *          customEventuality(obj2);
- *          obj1.on === obj2.on // returns true  
- *  2. off method added. It returns true/false.
- *  3. on returns 'off' method instead of 'this' (no method chaining)
+ * I like this concept of having functions which take object and return it enriched with certain new feature.
 */
 
 
@@ -79,6 +68,7 @@ var eventuality = function (that) {
 // Based on the above 'eventuality' function 
 // from "Javascript The Good Parts" - Douglas Crockford
 // !!! registry is shared by all objects - not good !!!!
+// this should be used only as an example of how big is the difference in memory consumption between those two approaches 
 // ******************************************
 
 var customEventuality = (function () {
@@ -187,7 +177,7 @@ var customEventuality = (function () {
 
 
 // ***************************************
-// test memory consuption of above two implementations
+// test memory consumption of above two implementations
 
 // created only because object created with constructors could be easily found in memory profiler output
 function CustArray() {this.arr = [];} 

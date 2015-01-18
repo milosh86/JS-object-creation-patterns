@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<!-- saved from url=(0036)http://fitzgeraldnick.com/weblog/53/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>
+      
+      Hiding Implementation Details with ECMAScript 6 WeakMaps
+      
+    </title>
+
+    <link rel="stylesheet" href="./Hiding Implementation Details with ECMAScript 6 WeakMaps_files/screen.css" type="text/css" media="screen, projection">
+    <link rel="stylesheet" href="./Hiding Implementation Details with ECMAScript 6 WeakMaps_files/print.css" type="text/css" media="print">
+    <!--[if IE]><link rel="stylesheet" href="blueprint/ie.css" type="text/css" media="screen, projection" /><![endif]-->
+
+    <link rel="alternate" type="application/atom+xml" href="http://fitzgeraldnick.com/weblog/feeds/latest-atom/" title="Latest Entries">
+    <link rel="alternate" type="application/atom+xml" href="http://www.google.com/reader/public/atom/user%2F06111624940130850285%2Fstate%2Fcom.google%2Fbroadcast" title="Latest Links">
+
+	  <style type="text/css">
+        a { text-decoration: none; }
+        a:hover { color: #FF6400; }
+        .recent { background: transparent url(http://media.fitzgeraldnick.com/feed.png) no-repeat center left; padding-left: 40px; }
+        body { font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif !important; font-style: none; }
+        hr {  border: none; height: 0; border-bottom: 1px dotted #9AA; }
+	  </style>
+
+  </head>
+  <body>
+
+    <div class="container">
+
+      <div id="head" class="prepend-4 span-16 append-4 prepend-top append-bottom">
+        <p>
+          Hello, I'm <a href="http://fitzgeraldnick.com/">Nick
+          Fitzgerald</a>. This is my <a href="http://fitzgeraldnick.com/weblog/">weblog</a>.  You can
+          also check out
+          my <a href="http://www.google.com/reader/shared/fitzgen">shared items
+          from Reader</a>, moments
+          on <a href="http://twitter.com/#!/fitzgen">Twitter</a>, and
+          <a href="http://github.com/fitzgen">code on GitHub</a>.  Feel free
+          to <a href="http://fitzgeraldnick.com/weblog/contact/">contact me</a> about whatever.
+        </p>
+      </div>
+
+      <div class="prepend-4 span-16 append-4">
+        
+
+    <h2>
+  <a href="./Hiding Implementation Details with ECMAScript 6 WeakMaps_files/Hiding Implementation Details with ECMAScript 6 WeakMaps.html">Hiding Implementation Details with ECMAScript 6 WeakMaps</a>
+</h2>
+
+<p class="alt">January 13th, 2014</p>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap">WeakMaps</a> are a new feature in <a href="http://wiki.ecmascript.org/doku.php?id=harmony:specification_drafts#current_working_draft">ECMAScript 6</a> that, among many
+other things, gives us a new technique to hide private implementation data and
+methods from consumers of the public API we choose to expose.</p>
+
+<h3>Overview</h3>
+
+<p>Here is what the basics look like:</p>
+
+<pre><code>const privates = new WeakMap();
+
+function Public() {
+  const me = {
+    // Private data goes here
+  };
+  privates.set(this, me);
+}
+
+Public.prototype.method = function () {
+  const me = privates.get(this);
+  // Do stuff with private data in `me`...
+};
+
+module.exports = Public;
+</code></pre>
+
+<p>Two things to take note of:</p>
+
+<ol>
+<li><p>Private data and methods belong inside the object stored in the <code>privates</code>
+WeakMap.</p></li>
+<li><p>Everything exposed on the instance and prototype is public; everything else
+is inaccessible from the outside world because <code>privates</code> isn't exported from the
+module.</p></li>
+</ol>
+
+<p>In the <a href="https://twitter.com/FirefoxDevTools">Firefox Developer Tools</a>, <a href="http://anton.kovalyov.net/">Anton Kovalyov</a> used
+this pattern in our <a href="http://mxr.mozilla.org/mozilla-central/source/browser/devtools/sourceeditor/editor.js">editor module</a>. We use <a href="http://codemirror.net/">CodeMirror</a> as the
+underlying implementation for our editor, but do not want to expose it directly
+to consumers of the editor API. Not exposing CodeMirror allows us to upgrade it
+when there are backwards incompatible releases or even replace CodeMirror with a
+different editor without the fear of breaking third party addons that have come
+to depend on older CodeMirror versions.</p>
+
+<pre><code>const editors = new WeakMap();
+
+// ...
+
+Editor.prototype = {
+
+  // ...
+
+  /**
+   * Mark a range of text inside the two {line, ch} bounds. Since the range may
+   * be modified, for example, when typing text, this method returns a function
+   * that can be used to remove the mark.
+   */
+  markText: function(from, to, className = "marked-text") {
+    let cm = editors.get(this);
+    let text = cm.getRange(from, to);
+    let span = cm.getWrapperElement().ownerDocument.createElement("span");
+    span.className = className;
+    span.textContent = text;
+
+    let mark = cm.markText(from, to, { replacedWith: span });
+    return {
+      anchor: span,
+      clear: () =&gt; mark.clear()
+    };
+  },
+
+  // ...
+
+};
+
+module.exports = Editor;
+</code></pre>
+
+<p>In the editor module, <code>editors</code> is the WeakMap mapping public <code>Editor</code> instances
+to private <code>CodeMirror</code> instances.</p>
+
+<h3>Why WeakMaps?</h3>
+
+<p>WeakMaps are used instead of normal Maps or the combination of instance IDs and
+a plain object so that we neither hold onto references and leak memory nor need
+to introduce manual object lifetime management. For more information, see the
+<a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap#Why_WeakMap.3F">"Why <em>Weak</em>Maps?" section of the MDN documentation for WeakMaps</a>.</p>
+
+<h3>Compared to Other Approaches</h3>
+
+<h4>Prefixing Private Members with an Underscore</h4>
+
+<p>This habit comes from the world of Python, but is pretty well spread through JS land.</p>
+
+<pre><code>function Public() {
+  this._private = "foo";
+}
+
+Public.prototype.method = function () {
+  // Do stuff with `this._private`...
+};
+</code></pre>
+
+<p>It works just fine when you can trust that the consumers of your API will
+respect your wishes and ignore the "private" methods that are prefixed by an
+underscore. For example, this works peachy when the only people consuming your
+API are also on your team, hacking on a different part of the same app.</p>
+
+<p>It completely breaks down when third parties are consuming your API and you want
+to move quickly and refactor without fear.</p>
+
+<h4>Closing Over Private Data in the Constructor</h4>
+
+<p>Alternatively, you can close over private data in your constructor or just
+define functions which return objects with function members that close over
+private variables.</p>
+
+<pre><code>function Public() {
+  const closedOverPrivate = "foo";
+  this.method = function () {
+    // Do stuff with `closedOverPrivate`...
+  };
+}
+
+// Or
+
+function makePublic() {
+  const closedOverPrivate = "foo";
+  return {
+    method: function () {
+      // Do stuff with `closedOverPrivate`...
+    }
+  };
+}
+</code></pre>
+
+<p>This works perfectly as far as information hiding goes: the private data is
+inaccessible to API consumers.</p>
+
+<p>However, you are creating new copies of every method for each instance that you
+create. This can balloon your memory footprint if you are instantiating many
+instances, which can lead to noticeable GC pauses or even your app's process
+getting killed on mobile platforms.</p>
+
+<h4>ES6 Symbols</h4>
+
+<p>Another language feature coming in ECMAScript 6 is the
+<a href="https://people.mozilla.org/~jorendorff/es6-draft.html#sec-ecmascript-language-types-symbol-type">Symbol primitive type</a> and it is designed for the kind of information
+hiding we have been discussing.</p>
+
+<pre><code>const privateFoo = Symbol("foo");
+
+function Public() {
+  this[privateFoo] = "bar";
+}
+
+Public.prototype.method = function () {
+  // Do stuff with `this[privateFoo]`...
+};
+
+module.exports = Public;
+</code></pre>
+
+<p>Unfortunately, Symbols are only implemented in V8 (behind the <code>--harmony</code> or
+<code>--harmony_symbols</code> flags) at the time of writing, but this is temporary.</p>
+
+<p>More problematic is the fact that you can enumerate the Symbols in an object
+with the <a href="https://people.mozilla.org/~jorendorff/es6-draft.html#sec-object.getownpropertysymbols"><code>Object.getOwnPropertySymbols</code></a> and
+<a href="https://people.mozilla.org/~jorendorff/es6-draft.html#sec-getownpropertykeys"><code>Object.getOwnPropertyKeys</code></a> functions. Because you can enumerate the
+Symbols in an object, a determined third party could still access your private
+implementation.</p>
+
+<h3>Conclusion</h3>
+
+<p>The WeakMap privates pattern is the best choice when you really need to hide
+private implementation details from public API consumers.</p>
+
+<h3>References</h3>
+
+<ul>
+<li><p>Brandon Benvie uses this WeakMap technique to create
+<a href="http://bbenvie.com/articles/2012-07-25/JavaScript-Classes-with-private-protected-and-super">JavaScript Classes with private, protected, and super</a></p></li>
+<li><p>The <a href="http://mxr.mozilla.org/mozilla-central/source/browser/devtools/sourceeditor/editor.js">Firefox Developer Tools' editor module</a></p></li>
+<li><p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap">Mozilla Developer Network on WeakMaps</a></p></li>
+</ul>
+
+
+
+
+<p class="span-12">
+  « <a href="http://fitzgeraldnick.com/weblog/52/" title="Re-Evaluate Individual Functions In Firefox Developer Tools&#39; Scratchpad">Previous Entry</a>
+</p>
+
+
+<p class="span-3">
+  <a href="http://fitzgeraldnick.com/weblog/54/" title="Memory Tooling In Firefox Developer Tools In 2014">Next Entry</a> »
+</p>
+
+
+
+
+
+      </div>
+
+      <hr>
+
+      <div class="prepend-4 span-16 append-4">
+
+        <h2 class="recent"><a href="http://fitzgeraldnick.com/weblog/feeds/latest-atom">Recent Entries</a></h2>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/59/">Naming `eval` Scripts with the `//# sourceURL` Directive</a>
+          <span class="alt">on December 5th, 2014</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/58/">wu.js 2.0</a>
+          <span class="alt">on August 7th, 2014</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/57/">Come work with me on Firefox Developer Tools</a>
+          <span class="alt">on July 8th, 2014</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/56/">Debugging Web Performance with Firefox DevTools - Velocity 2014</a>
+          <span class="alt">on June 26th, 2014</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/55/">Beyond Source Maps</a>
+          <span class="alt">on March 12th, 2014</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/54/">Memory Tooling in Firefox Developer Tools in 2014</a>
+          <span class="alt">on March 4th, 2014</span>
+        </p>
+        
+        <p>
+          <a href="./Hiding Implementation Details with ECMAScript 6 WeakMaps_files/Hiding Implementation Details with ECMAScript 6 WeakMaps.html">Hiding Implementation Details with ECMAScript 6 WeakMaps</a>
+          <span class="alt">on January 13th, 2014</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/52/">Re-evaluate Individual Functions in Firefox Developer Tools' Scratchpad</a>
+          <span class="alt">on November 22nd, 2013</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/51/">Testing Source Maps</a>
+          <span class="alt">on October 2nd, 2013</span>
+        </p>
+        
+        <p>
+          <a href="http://fitzgeraldnick.com/weblog/50/">Destructuring Assignment in ECMAScript 6</a>
+          <span class="alt">on August 15th, 2013</span>
+        </p>
+        
+        <p>
+          <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/us/">
+            <img alt="Creative Commons License" style="border-width:0" src="./Hiding Implementation Details with ECMAScript 6 WeakMaps_files/cc-license.png">
+          </a>
+        </p>
+      </div>
+
+    </div>
+
+    <a href="http://github.com/fitzgen">
+      <img style="position: fixed; top: 0; right: 0; border: 0;" src="./Hiding Implementation Details with ECMAScript 6 WeakMaps_files/forkme_right_orange_ff7600.png" alt="Fork me on GitHub">
+    </a>
+
+    
+    <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script><script src="./Hiding Implementation Details with ECMAScript 6 WeakMaps_files/ga.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      try {
+      var pageTracker = _gat._getTracker("UA-10103011-1");
+      pageTracker._trackPageview();
+      } catch(err) {}</script>
+
+  
+
+</body></html>

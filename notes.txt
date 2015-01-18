@@ -1,9 +1,16 @@
 Object creation / inheritance
 
 Requirements and constraints:
-	1. Delegate object / Prototype: common methods should be stored in prototype object - better memory efficency. Prototype methods have access to object's own public properties and methods, but have no access to private data. However, proto methods could access shared private data in the proto object. Also, protoypes could provide default values for properties that are based on primitive types (numbers, strings, bools). If we change in any way primitive default value, new instance level property is created without modifing value on the proto object. Don't put properties based on reference types (objects, arrays) in prototypes (it acts as a shared data)!
+	1. Delegate object / Prototype: common methods should be stored in prototype object - better memory efficiency. Prototype methods have access to object's own public properties and methods, but have no access to private data. However, proto methods could access shared private data in the proto object. Also, prototypes could provide default values for properties that are based on primitive types (numbers, strings, bools). If we change in any way primitive default value, new instance level property is created without modifying value on the proto object. Don't put properties based on reference types (objects, arrays) in prototypes (it acts as a shared data)! 
 	
-	2. Encapsulation / Data privacy: It should be possible to define private properties/methods that could be accessed only by priviledged methods. Priviledged methods must be on the same 'level' as private data, i.e. proto methods cannot access private data on 'child' object, and vice versa. It means that priviledged methods cannot be shared by all object instances. (privacy/encaptulation - memory efficency trade off). Alternative is to use special naming convenction for properties that should be private, such as 'begins with _'.
+	2. Encapsulation / Data privacy: It should be possible to define private properties/methods that could be accessed only by privileged methods. Privileged methods must be on the same 'level' as private data, i.e. proto methods cannot access private data on 'child' object, and vice versa. It means that privileged methods cannot be shared by all object instances. (privacy/encapsulation - memory efficiency trade off). Alternative is to use special naming convention for properties that should be private, such as 'begins with _'.
+
+	Very good overview of different ways to implement privacy: http://fitzgeraldnick.com/weblog/53/
+		* WeakMaps
+		* Prefixing Private Members with an Underscore
+		* Closing Over Private Data in the Constructor/Factory
+		* ES6 Symbols
+
 
 	3. Composing 'features'/prototypes (aka multiple inheritance): It should be possible to 'enrich' objects with multiple 'features'. It could be used for composing prototypes or for composing individual objects. Multiple inheritance could be done something like:
 
@@ -24,4 +31,11 @@ Requirements and constraints:
 	$.extend copy all properties in the chain
 
 	_.extend copy only properties from 'base' object (in _ ver 1.7 and below. In future releases it will copy all properties[check])
+
+----------------------------------------
+Object creation methods:
+	* Object literal
+	* Constructor function
+	* Object.create
+	* Factory function - function that returns new object
 
