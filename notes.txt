@@ -1,7 +1,7 @@
 Object creation / inheritance
 
 Requirements and constraints:
-	1. Delegate object / Prototype: common methods should be stored in prototype object - better memory efficiency. Prototype methods have access to object's own public properties and methods, but have no access to private data. However, proto methods could access shared private data in the proto object. Also, prototypes could provide default values for properties that are based on primitive types (numbers, strings, bools). If we change in any way primitive default value, new instance level property is created without modifying value on the proto object. Don't put properties based on reference types (objects, arrays) in prototypes (it acts as a shared data)! 
+	1. Delegate object / Prototype: common methods should be stored in prototype object - better memory efficiency. Prototype methods have access to object's own public properties and methods, but have no access to private data. However, proto methods could access shared private data in the proto object. Also, prototypes could provide default values for properties that are based on primitive types (numbers, strings, bools). If we change, in any way, primitive default value, a new instance level property is created without modifying value on the proto object. Don't put properties based on reference types (objects, arrays) in prototypes (it acts as a shared data)! 
 	
 	2. Encapsulation / Data privacy: It should be possible to define private properties/methods that could be accessed only by privileged methods. Privileged methods must be on the same 'level' as private data, i.e. proto methods cannot access private data on 'child' object, and vice versa. It means that privileged methods cannot be shared by all object instances. (privacy/encapsulation - memory efficiency trade off). Alternative is to use special naming convention for properties that should be private, such as 'begins with _'.
 
@@ -12,7 +12,7 @@ Requirements and constraints:
 		* ES6 Symbols
 
 
-	3. Composing 'features'/prototypes (aka multiple inheritance): It should be possible to 'enrich' objects with multiple 'features'. It could be used for composing prototypes or for composing individual objects. Multiple inheritance could be done something like:
+	3. Composing/mixin 'features'/prototypes (aka multiple inheritance): It should be possible to 'enrich' objects with multiple 'features'. It could be used for composing prototypes or for composing individual objects. Multiple inheritance could be done something like:
 
 		var proto1 = {
 			a: 1,
@@ -26,7 +26,7 @@ Requirements and constraints:
 
 	This approach is appropriate when proto1 and proto2 are dependable (proto2 is delegating some operations to proto1), i.e. controller is proto1 and loginController and validationController are proto2. loginController and validationController are delegating some common operations to controller prototype (proto 1). Composing is more appropriate when we have a set of independent features which we want to use as a building blocks for other prototypes or base objects.
 
-	Composition techniques: mixins (explicit, implicit), parasitic inheritance, 
+	Composition techniques: mixins (explicit, implicit, functional), parasitic inheritance, what else?
 
 	$.extend copy all properties in the chain
 

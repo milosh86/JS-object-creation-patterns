@@ -80,18 +80,19 @@ var factory = (function(){
   var name = 'shared name';
   var method = function () {return 'shared method: ' + this.name};
 
-  return function factory() {
+  return function factory(param) {
     return {
-      name: name,
-      method: method,
-      local: {name:'local name'}
+      	name: name,
+      	method: method,
+		local: {name:'local name'},
+		param: param // local	
 
-    }
+    };
   };
 })();
 
-var obj1 = factory();
-var obj2 = factory();
+var obj1 = factory('param 1');
+var obj2 = factory('param 2');
 
 obj1.method === obj2.method; // true
 obj1.name === obj2.name; // true
@@ -190,7 +191,7 @@ var Constructor = function () {
  
 };
 
-// 2. Prefixing Private Members with an Underscore (just a convention, does not force any restrictions)
+// 2. Prefixing Private Members with an underscore (just a convention, does not force any restrictions)
 function Constructor() {
   if (!(this instanceof Constructor)) // or use 'use strict' to prevent nasty bugs with 'this' when Constructor is invoked without 'new'
     return new Constructor;
@@ -206,175 +207,65 @@ Constructor.prototype.method = function(){
 
 // ===========================================
 // ===========================================
+// Inheritance
 
-
-
-/* factory function with 'static' functions and properties*/
-var contact = (function () {
-    function protoF() {
-        return 'hello, each object share the same function staticf';
-    }
-    
-    var data = {d:'data'};
-    
-   
-    
-    function contact(name, email) {
-        return {
-            name: name,
-            email: email,
-            staticf: protoF,
-            staticdata: data,
-        };
-    }
-    
-    return contact;
-}());
-
-/* V2 add static properties to any object passed in */
-var contact = (function () {
-    function protoF() {
-        return 'hello, each object share the same function staticf';
-    }
-    
-    var data = {d:'data'};
-    
-   
-    
-    function contact(obj) {
-        // pass in already initialized object!
-      // name: name,
-      // email: email,
-      obj.staticf = protoF;
-      obj.staticdata = data;
-      return obj;
-
-    }
-    
-    return contact;
-}());
-
-var c1 = contact('name', 'email');
-
-/* factory function */
-var contact = function (name, email) {
-    return {
-        name: name,
-        email: email,
-        f: function() {return 'hello, each object has its own function f!'},
-        data: {d:'data'},
-    };
-};
-
-
-// ***********************************************
-
-function featureSet1(obj) {
-    obj = obj || {};
-    
-    obj.FS1feature1 = 'fs1_feature1';
-    obj.FS1feature2 = 'fs1_feature2';
+// Inheritance between 2 constructor functions
+function Parent(name) {
+	this.name = name;
 }
-// feature might not need init, but instead a method that is supposed to use 'base' properties should init it for itself. See Backbone's Event.
-featureSet1.init = function () {
-  var priv = 'local private';
+Parent.prototype.getName = function() {return this.name;};
 
-  this.getLocalPriv = function () {
-      return priv;
-    };
+function Child(name, type) {
+	this.type = type;
+	Parent.call(this, name);
+}
+Child.prototype = Object.create(Parent.prototype);
+Child.prototype.constructor = Child;
+Child.prototype.super = Parent.prototype; 
+Child.prototype.getName = function () {return this.super.getName.call(this)};
+Child.prototype.getType = function () {return this.type;};
 
-  this.setLocalPriv = function (val) {
-      priv = val;
-    };
-
-  this.desc = 'FS1 Init';
-};
-
-function featureSet2(obj) {
-    obj = obj || {};
-    
-    // static private
-    var private = 'private';
-
-    obj.FS2feature1 = 'fs2_feature1';
-    obj.FS2feature2 = 'fs2_feature2';
-    
-    obj.getPrivate = function () {
-      return private;
-    };
-
-    obj.setPrivate = function (val) {
-      private = val;
-    };
+// helper method
+function inherit(Child, Parent) {
+    Child.prototype = Object.create(Parent.prototype);
+    //Child.prototype.constructor = Child;
+	// or
+	Object.defineProperty(Child.prototype, 'constructor', {
+		enumerable: false,
+		configurable: false,
+		writable: false,
+		value: Child
+	});
+     Child.super = Parent.prototype;
 }
 
-featureSet2.init = function () {
-  var priv = 'local private FS2';
-
-  this.getLocalPriv2 = function () {
-      return priv;
-    };
-
-  this.setLocalPriv2 = function (val) {
-      priv = val;
-    };
-
-  this.desc = 'FS2 Init';
-};
-
-var extend = (function () {
-    var features = {
-        feature1: featureSet1,
-        feature2: featureSet2 
-    };
-    
-    function extend(obj) {
-        var args = [].slice.call(arguments, 1);
-        extend.inits = [];
-        args.forEach(function (f) {
-            features[f] && features[f](obj);
-            features[f] && extend.inits.push(features[f].init);
-        });
-        
-        return function(obj) {
-          extend.inits.forEach(function (f) {f.call(obj);})
-        };
-    };
-    
-    extend.addFeature = function (name, feature) {
-        if(!features[name] && typeof feature === 'function') {
-            features[name] = feature;
-        }
-    };
-    
-    return extend;
-}());
-
-
-var proto1 = {
-    name: 'some proto object',
-    description: 'to be extended...'
-};
-
-var init = extend(proto1, 'feature2', 'feature1');
-
-var o1 = Object.create(proto1);
-init.call(o1);
-
-// creates new object with given features. If proto is null
-function create(proto, [features]) {
-  // check if proto is null or object
-  var obj = Object.create(proto),
-      init;
-
-  if (proto)
-    init = extend(proto, [features]);
-  else
-    init = extend(obj, [features]);
-  
-  init.call(obj);
-  return obj;
+// extend - inheritance by copying
+function extend(Child, Parent) {
+	var p = Parent.prototype;
+	var c = Child.prototype;
+	for (var i in p) {
+		c[i] = p[i];
+	}
+	c.super = p;
 }
 
+// multiple inheritance is done with clasic extend
 
+// parasitic inheritance
+function parent () {
+	return {type:'parent', value: 'hello from parent'};
+}
+function child() {
+	// 1. instance an object
+	var obj = parent(); // or Object.create(parent())
+	
+	// 2. enrich it with new props
+	obj.type = 'child';
+	obj.value = 'hello from child';
+	// 3. return new object
+	return obj;
+	
+}
+
+ 
 
